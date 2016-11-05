@@ -1,0 +1,22 @@
+{
+  "name": "redux-saga-toy",
+  "version": "1.0.0",
+  "description": "A toy version of redux-saga",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "redux",
+    "redux-saga"
+  ],
+  "author": "Chris Tate",
+  "license": "MIT",
+  "dependencies": {
+    "redux": "^3.6.0"
+  },
+  "devDependencies": {
+    "webpack": "2.1.0-beta.25",
+    "webpack-dev-server": "2.1.0-beta.9"
+  }
+}
