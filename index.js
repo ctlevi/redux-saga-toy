@@ -1,53 +1,60 @@
 import { createStore, applyMiddleware } from 'redux';
-import { createMiddleware, take, select, put, call } from './saga';
+import { createSagaMiddleware, take, select, put, call } from './saga';
 
+const FETCH_START = 'FETCH_START';
 const FETCH_FINISHED = 'FETCH_FINISHED';
 
 const initialState = {
     loading: false,
-    data: []
+    posts: []
 };
 
 function reducer(state = initialState, action) {
     switch(action.type) {
+        case FETCH_START:
+            return {
+                loading: true,
+                posts: []
+            };
         case FETCH_FINISHED:
             return {
                 loading: false,
-                data: action.data
+                posts: action.posts
             };
         default:
             return state;
     }
 }
 
-const sagaMiddleware = createMiddleware();
+const sagaMiddleware = createSagaMiddleware();
 const store = createStore(reducer, applyMiddleware(sagaMiddleware));
-sagaMiddleware.run(mySaga);
+sagaMiddleware.run(fetchRedditPostsSaga);
 
 store.subscribe(() => {
-//   console.log(store.getState())
-});
-
-window.store = store;
-
-function* mySaga() {
-    yield 23;
-    const action = yield take('FETCH_FINISHED');
-    console.log('The action was', action);
-    const loading = yield select((state) => state.loading);
-    console.log(loading);
-    try {
-        yield call(() => { throw Error('HEY') });
-    } catch (e) {
-        console.log(e)
+    const { loading, posts } = store.getState();
+    const postsDiv = document.querySelector('#posts');
+    if (loading) {
+        postsDiv.innerHTML = 'loading...';
+    } else {
+        const postsList = store.getState().posts.map((post) => `<li>${post}</li>`).join('')
+        postsDiv.innerHTML = `<ul>${postsList}</ul>`;
     }
-    const result = yield call(() => fetch('http://www.reddit.com/r/funny.json').then(result => result.json()));
-    console.log('The result was', result);
-    try {
-        const result2 = yield call(fetch.bind(window), 'http://www.reddit.com/r/bluelurghldjfddjkjkd.json');
-    } catch (e) {
-        console.log(e)
+})
+
+document.querySelector('#fetchPostsButton').onclick = function() {
+    const subreddit = document.querySelector('#subredditInput').value;
+    console.log('eh')
+    store.dispatch({ type: FETCH_START, subreddit });
+}
+
+function* fetchRedditPostsSaga() {
+    while (true) {
+        const action = yield take(FETCH_START);
+        const result = yield call(() => fetch(`http://www.reddit.com/r/${action.subreddit}.json`).then(result => result.json()));
+        const postTitles = (result.data.children || [])
+            .map((post) => post.data.title)
+            .filter((title) => title);
+
+        yield put({ type: 'FETCH_FINISHED', posts: postTitles })
     }
-    yield put({ type: 'FETCH_FINISHED', data: ['hey there guys', 'whoa again', 'me too'] })
-    yield 100;
 }
